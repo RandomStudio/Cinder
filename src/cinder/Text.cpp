@@ -635,6 +635,8 @@ void TextBox::createLines() const
 		mCalculatedSize.y += ascent + descent + leading + mLineheight;
 		range.location += range.length;
 	}
+	
+	mCalculatedSize.y -= mLineheight;
 
 	::CFRelease( attrStr );
 	::CFRelease( typeSetter );
