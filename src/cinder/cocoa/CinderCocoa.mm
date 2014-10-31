@@ -248,6 +248,9 @@ CFAttributedStringRef createCfAttributedString( const std::string &str, const Fo
 	CGColorRef cgColor = createCgColor( color );
 	const int ligatures = ( ligate ) ? 1 : 0;
     CFNumberRef ligaturesRef = ::CFNumberCreate( kCFAllocatorDefault, kCFNumberIntType, &ligatures );
+	if(tracking == 0) {
+		tracking = 0.001;
+	}
     CFNumberRef trackingRef = ::CFNumberCreate( kCFAllocatorDefault, kCFNumberFloatType, &tracking );
 	const CFStringRef keys[] = {
 		kCTFontAttributeName,
