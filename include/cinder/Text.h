@@ -92,7 +92,7 @@ class TextBox {
 	typedef enum Alignment { LEFT, CENTER, RIGHT } Alignment;
 	enum { GROW = 0 };
 	
-	TextBox() : mAlign( LEFT ), mSize( GROW, GROW ), mFont( Font::getDefault() ), mInvalid( true ), mColor( 1, 1, 1, 1 ), mBackgroundColor( 0, 0, 0, 0 ), mPremultiplied( false ), mLigate( true ), mTracking( 0 ), mLineheight( 0 ) {}
+	TextBox() : mAlign( LEFT ), mSize( GROW, GROW ), mFont( Font::getDefault() ), mInvalid( true ), mColor( 1, 1, 1, 1 ), mBackgroundColor( 0, 0, 0, 0 ), mPremultiplied( false ), mLigate( true ), mTracking( 0 ), mLineheight( 0 ), mBoundingBoxPadding( 0 ) {}
 
 	TextBox&			size( Vec2i sz ) { setSize( sz ); return *this; }
 	TextBox&			size( int width, int height ) { setSize( Vec2i( width, height ) ); return *this; }
@@ -135,6 +135,10 @@ class TextBox {
     TextBox&            lineheight( float lineheight = 0.0 ) { setLineheight( lineheight ); return *this; }
     float               getLineheight() const { return mLineheight; }
     void                setLineheight( float lineheight ) { mLineheight = lineheight; }
+	
+	TextBox&            boundingBoxPadding( float padding = 0.0 ) { setBoundingBoxPadding( padding ); return *this; }
+    float               getBoundingBoxPadding() const { return mBoundingBoxPadding; }
+    void                setBoundingBoxPadding( float padding ) { mBoundingBoxPadding = padding; }
 
 	Vec2f									measure() const;
 	/** Returns a vector of pairs of glyph indices and the position of their left baselines
@@ -153,6 +157,7 @@ class TextBox {
 	bool			mLigate;
     float           mTracking;
     float           mLineheight;
+	float			mBoundingBoxPadding;
 	mutable bool	mInvalid;
 
 	mutable Vec2f	mCalculatedSize;

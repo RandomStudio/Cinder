@@ -629,10 +629,12 @@ void TextBox::createLines() const
 		
 		lineOffset.x = ::CTLineGetPenOffsetForFlush( line, flush, maxWidth );
 		lineOffset.y += ascent;
+		lineOffset.x += mBoundingBoxPadding;
+		lineOffset.y += mBoundingBoxPadding;
 		mLines.push_back( make_pair( shared_ptr<__CTLine>( (__CTLine*)line, ::CFRelease ), lineOffset ) );
 		lineOffset.y += descent + leading + mLineheight;
-		mCalculatedSize.x = std::max( mCalculatedSize.x, (float)lineWidth );
-		mCalculatedSize.y += ascent + descent + leading + mLineheight;
+		mCalculatedSize.x = std::max( mCalculatedSize.x, (float)lineWidth ) + (mBoundingBoxPadding * 2);
+		mCalculatedSize.y += (ascent + descent + leading + mLineheight) + (mBoundingBoxPadding * 2);
 		range.location += range.length;
 	}
 	
