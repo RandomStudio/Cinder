@@ -599,7 +599,7 @@ Surface renderString( const string &str, const Font &font, const ColorA &color, 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TextBox
 #if defined( CINDER_COCOA )
-void TextBox::createLines(int maxNumberOfLines) const
+void TextBox::createLines() const
 {
 	if( ! mInvalid )
 		return;
@@ -635,7 +635,7 @@ void TextBox::createLines(int maxNumberOfLines) const
 		
 		// we add one extra line so truncation will take place in render()
 		// we don't add this line to the calculated size though
-		if(mLines.size() > maxNumberOfLines)
+		if(mLines.size() > mMaxNumberOfLines)
 			break;
 		
 		lineOffset.y += descent + leading + mLineheight;
@@ -658,7 +658,11 @@ vector<pair<uint16_t,Vec2f> > TextBox::measureGlyphs() const
 
 	createLines();
 	CFRange range = CFRangeMake( 0, 0 );
+	int i = 0;
 	for( vector<pair<shared_ptr<const __CTLine>,Vec2f> >::const_iterator lineIt = mLines.begin(); lineIt != mLines.end(); ++lineIt ) {
+		if(i >= mMaxNumberOfLines)
+			break;
+		
 		CFArrayRef runsArray = ::CTLineGetGlyphRuns( lineIt->first.get() );
 		CFIndex runs = ::CFArrayGetCount( runsArray );
 		for( CFIndex run = 0; run < runs; ++run ) {
@@ -671,6 +675,7 @@ vector<pair<uint16_t,Vec2f> > TextBox::measureGlyphs() const
 			for( size_t t = 0; t < glyphCount; ++t )			
 				result.push_back( make_pair( glyphBuffer[t], Vec2f( points[t].x, points[t].y ) + lineIt->second ) );
 		}
+		i++;
 	}
 	
 	return result;
@@ -682,9 +687,9 @@ Vec2f TextBox::measure() const
 	return mCalculatedSize;
 }
 
-Surface	TextBox::render( Vec2f offset, int maxNumberOfLines )
+Surface	TextBox::render( Vec2f offset )
 {
-	createLines(maxNumberOfLines);
+	createLines();
 	
 	float sizeX = ( mSize.x <= 0 ) ? mCalculatedSize.x : mSize.x;
 	float sizeY = ( mSize.y <= 0 ) ? mCalculatedSize.y : mSize.y;
@@ -696,7 +701,7 @@ Surface	TextBox::render( Vec2f offset, int maxNumberOfLines )
 	::CGContextRef cgContext = cocoa::createCgBitmapContext( result );
 	::CGContextSetTextMatrix( cgContext, CGAffineTransformIdentity );
 	
-	if(maxNumberOfLines >= mLines.size()) {
+	if(mMaxNumberOfLines >= mLines.size()) {
 		for( vector<pair<shared_ptr<const __CTLine>,Vec2f> >::const_iterator lineIt = mLines.begin(); lineIt != mLines.end(); ++lineIt ) {
 			::CGContextSetTextPosition( cgContext, lineIt->second.x + offset.x, sizeY - lineIt->second.y + offset.y );
 			::CTLineDraw( lineIt->first.get(), cgContext );
@@ -704,15 +709,15 @@ Surface	TextBox::render( Vec2f offset, int maxNumberOfLines )
 	}
 	else {
 		// draw 1 line less then the max number of lines, we draw the last one separately
-		for(int i = 0; i < maxNumberOfLines - 1; i++) {
+		for(int i = 0; i < mMaxNumberOfLines - 1; i++) {
 			pair<shared_ptr<const __CTLine>,Vec2f> line = mLines[i];
 			::CGContextSetTextPosition( cgContext, line.second.x + offset.x, sizeY - line.second.y + offset.y );
 			::CTLineDraw( line.first.get(), cgContext );
 		}
 		
 		// truncate the last line before drawing it
-		CTLineRef lastLine = mLines[maxNumberOfLines - 1].first.get();
-		Vec2f lastOrigin = mLines[maxNumberOfLines - 1].second;
+		CTLineRef lastLine = mLines[mMaxNumberOfLines - 1].first.get();
+		Vec2f lastOrigin = mLines[mMaxNumberOfLines - 1].second;
 		
 		// truncation token is a CTLineRef itself
 		CFRange effectiveRange;
