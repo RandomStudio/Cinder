@@ -162,7 +162,7 @@ class TextBox {
 
 	mutable Vec2f	mCalculatedSize;
 #if defined( CINDER_COCOA )
-	void			createLines() const;
+	void			createLines(int maxNumberOfLines = INT_MAX) const;
 
 	mutable std::vector<std::pair<std::shared_ptr<const __CTLine>,Vec2f> >	mLines;
 #elif defined( CINDER_MSW )

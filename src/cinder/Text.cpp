@@ -599,7 +599,7 @@ Surface renderString( const string &str, const Font &font, const ColorA &color, 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TextBox
 #if defined( CINDER_COCOA )
-void TextBox::createLines() const
+void TextBox::createLines(int maxNumberOfLines) const
 {
 	if( ! mInvalid )
 		return;
@@ -621,7 +621,7 @@ void TextBox::createLines() const
 	mCalculatedSize = Vec2f::zero();
 	mLines.clear();
 	Vec2f lineOffset = Vec2f::zero();
-	while( range.location < strLength ) {
+	while( range.location < strLength) {
 		CGFloat ascent, descent, leading;
 		range.length = ::CTTypesetterSuggestLineBreak( typeSetter, range.location, maxWidth );
 		CTLineRef line = ::CTTypesetterCreateLine( typeSetter, range );
@@ -632,6 +632,12 @@ void TextBox::createLines() const
 		lineOffset.x += mBoundingBoxPadding;
 		lineOffset.y += mBoundingBoxPadding;
 		mLines.push_back( make_pair( shared_ptr<__CTLine>( (__CTLine*)line, ::CFRelease ), lineOffset ) );
+		
+		// we add one extra line so truncation will take place in render()
+		// we don't add this line to the calculated size though
+		if(mLines.size() > maxNumberOfLines)
+			break;
+		
 		lineOffset.y += descent + leading + mLineheight;
 		mCalculatedSize.x = std::max( mCalculatedSize.x, (float)lineWidth ) + (mBoundingBoxPadding * 2);
 		mCalculatedSize.y += (ascent + descent + leading + mLineheight) + (mBoundingBoxPadding * 2);
@@ -678,7 +684,7 @@ Vec2f TextBox::measure() const
 
 Surface	TextBox::render( Vec2f offset, int maxNumberOfLines )
 {
-	createLines();
+	createLines(maxNumberOfLines);
 	
 	float sizeX = ( mSize.x <= 0 ) ? mCalculatedSize.x : mSize.x;
 	float sizeY = ( mSize.y <= 0 ) ? mCalculatedSize.y : mSize.y;
