@@ -145,7 +145,7 @@ class TextBox {
 		\warning Does not support word wrapping on Windows. **/
 	std::vector<std::pair<uint16_t,Vec2f> >	measureGlyphs() const;
 
-	Surface				render( Vec2f offset = Vec2f::zero() );
+	Surface				render( Vec2f offset = Vec2f::zero(), int maxNumberOfLines = INT_MAX );
 
   protected:
 	Alignment		mAlign;

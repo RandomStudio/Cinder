@@ -676,7 +676,7 @@ Vec2f TextBox::measure() const
 	return mCalculatedSize;
 }
 
-Surface	TextBox::render( Vec2f offset )
+Surface	TextBox::render( Vec2f offset, int maxNumberOfLines )
 {
 	createLines();
 	
@@ -690,9 +690,59 @@ Surface	TextBox::render( Vec2f offset )
 	::CGContextRef cgContext = cocoa::createCgBitmapContext( result );
 	::CGContextSetTextMatrix( cgContext, CGAffineTransformIdentity );
 	
-	for( vector<pair<shared_ptr<const __CTLine>,Vec2f> >::const_iterator lineIt = mLines.begin(); lineIt != mLines.end(); ++lineIt ) {
-		::CGContextSetTextPosition( cgContext, lineIt->second.x + offset.x, sizeY - lineIt->second.y + offset.y );
-		::CTLineDraw( lineIt->first.get(), cgContext );
+	if(maxNumberOfLines >= mLines.size()) {
+		for( vector<pair<shared_ptr<const __CTLine>,Vec2f> >::const_iterator lineIt = mLines.begin(); lineIt != mLines.end(); ++lineIt ) {
+			::CGContextSetTextPosition( cgContext, lineIt->second.x + offset.x, sizeY - lineIt->second.y + offset.y );
+			::CTLineDraw( lineIt->first.get(), cgContext );
+		}
+	}
+	else {
+		// draw 1 line less then the max number of lines, we draw the last one separately
+		for(int i = 0; i < maxNumberOfLines - 1; i++) {
+			pair<shared_ptr<const __CTLine>,Vec2f> line = mLines[i];
+			::CGContextSetTextPosition( cgContext, line.second.x + offset.x, sizeY - line.second.y + offset.y );
+			::CTLineDraw( line.first.get(), cgContext );
+		}
+		
+		// truncate the last line before drawing it
+		CTLineRef lastLine = mLines[maxNumberOfLines - 1].first.get();
+		Vec2f lastOrigin = mLines[maxNumberOfLines - 1].second;
+		
+		// truncation token is a CTLineRef itself
+		CFRange effectiveRange;
+		CFAttributedStringRef attrStr = cocoa::createCfAttributedString( mText, mFont, mColor, mLigate, mTracking );
+		CFDictionaryRef stringAttrs = CFAttributedStringGetAttributes(attrStr, 0, &effectiveRange);
+		
+		CFAttributedStringRef truncationString = CFAttributedStringCreate(NULL, CFSTR("\u2026"), stringAttrs);
+		CTLineRef truncationToken = CTLineCreateWithAttributedString(truncationString);
+		CFRelease(truncationString);
+		
+		// now create the truncated line -- need to grab extra characters from the source string,
+		// or else the system will see the line as already fitting within the given width and
+		// will not truncate it.
+		
+		// range to cover everything from the start of lastLine to the end of the string
+		CFRange rng = CFRangeMake(CTLineGetStringRange(lastLine).location, 0);
+		rng.length = CFAttributedStringGetLength(attrStr) - rng.location;
+		
+		// substring with that range
+		CFAttributedStringRef longString = CFAttributedStringCreateWithSubstring(NULL, attrStr, rng);
+		// line for that string
+		CTLineRef longLine = CTLineCreateWithAttributedString(longString);
+		CFRelease(longString);
+		
+		CTLineRef truncated = CTLineCreateTruncatedLine(longLine, sizeX, kCTLineTruncationEnd, truncationToken);
+		CFRelease(longLine);
+		CFRelease(truncationToken);
+		
+		// if 'truncated' is NULL, then no truncation was required to fit it
+		if (truncated == NULL)
+			truncated = (CTLineRef)CFRetain(lastLine);
+		
+		// draw it at the same offset as the non-truncated version
+		::CGContextSetTextPosition( cgContext, lastOrigin.x + offset.x, sizeY - lastOrigin.y + offset.y );
+		::CTLineDraw( truncated, cgContext );
+		CFRelease(truncated);
 	}
 	CGContextFlush( cgContext );
     CGContextRelease( cgContext );
