@@ -605,9 +605,14 @@ void TextBox::createLines() const
 		return;
 
 	CFRange range = CFRangeMake( 0, 0 );
-	CFAttributedStringRef attrStr = cocoa::createCfAttributedString( mText, mFont, mColor, mLigate, mTracking );
-	if( ! attrStr )
-		return;
+	CFAttributedStringRef attrStr = mAttributedString;
+	if( ! attrStr ){
+		attrStr = cocoa::createCfAttributedString( mText, mFont, mColor, mLigate, mTracking );
+		if( ! attrStr ){
+			return;
+		}
+	}
+		
 	CTTypesetterRef typeSetter = ::CTTypesetterCreateWithAttributedString( attrStr );
 
 	CFIndex strLength = ::CFAttributedStringGetLength( attrStr );
@@ -721,7 +726,10 @@ Surface	TextBox::render( Vec2f offset )
 		
 		// truncation token is a CTLineRef itself
 		CFRange effectiveRange;
-		CFAttributedStringRef attrStr = cocoa::createCfAttributedString( mText, mFont, mColor, mLigate, mTracking );
+		CFAttributedStringRef attrStr = mAttributedString;
+		if( ! attrStr ){
+			attrStr = cocoa::createCfAttributedString( mText, mFont, mColor, mLigate, mTracking );
+		}
 		CFDictionaryRef stringAttrs = CFAttributedStringGetAttributes(attrStr, 0, &effectiveRange);
 		
 		CFAttributedStringRef truncationString = CFAttributedStringCreate(NULL, CFSTR("\u2026"), stringAttrs);

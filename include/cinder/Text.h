@@ -36,6 +36,7 @@
 #if defined( CINDER_COCOA )
 struct __CTFrame;
 struct __CTLine;
+#include "cinder/cocoa/CinderCocoa.h"
 #endif
 
 namespace cinder {
@@ -92,7 +93,11 @@ class TextBox {
 	typedef enum Alignment { LEFT, CENTER, RIGHT } Alignment;
 	enum { GROW = 0 };
 	
-	TextBox() : mAlign( LEFT ), mSize( GROW, GROW ), mFont( Font::getDefault() ), mInvalid( true ), mColor( 1, 1, 1, 1 ), mBackgroundColor( 0, 0, 0, 0 ), mPremultiplied( false ), mLigate( true ), mTracking( 0 ), mLineheight( 0 ), mBoundingBoxPadding( 0 ), mMaxNumberOfLines( INT_MAX ) {}
+	TextBox() : mAlign( LEFT ), mSize( GROW, GROW ), mFont( Font::getDefault() ), mInvalid( true ), mColor( 1, 1, 1, 1 ), mBackgroundColor( 0, 0, 0, 0 ), mPremultiplied( false ), mLigate( true ), mTracking( 0 ), mLineheight( 0 ), mBoundingBoxPadding( 0 ), mMaxNumberOfLines( INT_MAX ) {
+#if defined( CINDER_COCOA )
+		mAttributedString = NULL;	
+#endif
+	}
 
 	TextBox&			size( Vec2i sz ) { setSize( sz ); return *this; }
 	TextBox&			size( int width, int height ) { setSize( Vec2i( width, height ) ); return *this; }
@@ -143,6 +148,12 @@ class TextBox {
 	TextBox&            maxNumberOfLines( int nLines = INT_MAX ) { setMaxNumberOfLines( nLines ); return *this; }
     int					getMaxNumberOfLines() const { return mMaxNumberOfLines; }
     void                setMaxNumberOfLines( int maxNumberOfLines ) { mMaxNumberOfLines = maxNumberOfLines; }
+	
+#if defined( CINDER_COCOA )
+	TextBox&			attributedString( const CFAttributedStringRef &t ) { setAttributedString( t ); return *this; }
+	const CFAttributedStringRef&	getAttributedString() const { return mAttributedString; }
+	void				setAttributedString( const CFAttributedStringRef &t ) { mAttributedString = t; mInvalid = true; }
+#endif
 
 	Vec2f									measure() const;
 	/** Returns a vector of pairs of glyph indices and the position of their left baselines
@@ -167,6 +178,7 @@ class TextBox {
 
 	mutable Vec2f	mCalculatedSize;
 #if defined( CINDER_COCOA )
+	CFAttributedStringRef mAttributedString;
 	void			createLines() const;
 
 	mutable std::vector<std::pair<std::shared_ptr<const __CTLine>,Vec2f> >	mLines;
