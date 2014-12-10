@@ -759,6 +759,16 @@ Surface	TextBox::render( Vec2f offset )
 			truncated = (CTLineRef)CFRetain(lastLine);
 		
 		// draw it at the same offset as the non-truncated version
+		if(mAlign != LEFT) {
+			CGRect bounds = CTLineGetBoundsWithOptions(truncated, kCTLineBoundsUseGlyphPathBounds);
+			if(mAlign == CENTER) {
+				lastOrigin.x = (sizeX - bounds.size.width) / 2.0;
+			}
+			else if (mAlign == RIGHT) {
+				lastOrigin.x = sizeX - bounds.size.width;
+			}
+		}
+		
 		::CGContextSetTextPosition( cgContext, lastOrigin.x + offset.x, sizeY - lastOrigin.y + offset.y );
 		::CTLineDraw( truncated, cgContext );
 		CFRelease(truncated);
