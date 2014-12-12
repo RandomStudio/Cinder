@@ -516,6 +516,11 @@ void ImageSourceCgImage::load( ImageTargetRef target )
 	if( ! pixels )
 		throw ImageIoExceptionFailedLoad( "Core Graphics failure copying data." );
 	
+	// check if the expected number of pixels is present in the data
+	if(getWidth() * getHeight() * (channelOrderNumChannels(getChannelOrder()) * dataTypeBytes(getDataType())) != ::CFDataGetLength(((CFDataRef)pixels.get()))) {
+		throw ImageIoExceptionFailedLoad( "Loading image failed. Data seems to be corrupt." );
+	}
+	
 	// get a pointer to the ImageSource function appropriate for handling our data configuration
 	ImageSource::RowFunc func = setupRowFunc( target );
 	
